@@ -14,5 +14,11 @@ demo:
 demo_bsds:
 	bash demo/run_demo_bsds.sh
 
+fom: Figure_of_Merit/fom.c netpbm.c
+	$(CC) $(CFLAGS) -I. -o demo/fom Figure_of_Merit/fom.c netpbm.c $(LIBS)
+
+demo_fom:
+	bash demo/run_fom.sh
+
 clean:
-	rm -f demo/canny_edge demo/gaussian_canny_combo
+	rm -f demo/canny_edge demo/gaussian_canny_combo demo/fom
