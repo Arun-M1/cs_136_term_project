@@ -255,16 +255,16 @@ Image canny(Image img) {
     }
 
     //baseline
-    //double lowThreshold = 0.075 * maxMag;
-    //double highThreshold = 0.15 * maxMag;
+    double lowThreshold = 0.075 * maxMag;
+    double highThreshold = 0.15 * maxMag;
 
     //sensitive
     // double lowThreshold = 0.05 * maxMag;
     // double highThreshold = 0.10 * maxMag;
 
     //strict
-    double lowThreshold = 0.15 * maxMag;
-    double highThreshold = 0.30 * maxMag;
+    // double lowThreshold = 0.15 * maxMag;
+    // double highThreshold = 0.30 * maxMag;
     
 
     // classify pixels
