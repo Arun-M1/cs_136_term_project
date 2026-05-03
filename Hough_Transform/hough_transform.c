@@ -5,13 +5,26 @@
 #include <time.h>
 #include "netpbm.h"
 
-#define EDGE_THRESHOLD 40.0
-#define MIN_RADIUS 14
-#define MAX_RADIUS 65
-#define RADIUS_STEP 2
+/*
+Tuned for your 3532 x 3532 PGM image.
+
+Original values were too small:
+MIN_RADIUS 14
+MAX_RADIUS 65
+EDGE_THRESHOLD 40
+
+This image has larger circular structures and lots of texture noise.
+*/
+
+#define EDGE_THRESHOLD 90.0
+#define MIN_RADIUS 35
+#define MAX_RADIUS 160
+#define RADIUS_STEP 5
 #define ANGLE_STEP_DEG 6
-#define NUMBER_OF_CIRCLES 10
-#define MIN_CENTER_SEPARATION 22.0
+#define NUMBER_OF_CIRCLES 25
+#define MIN_CENTER_SEPARATION 85.0
+
+#define MIN_STRENGTH_RATIO 0.30
 
 typedef struct
 {
@@ -91,6 +104,11 @@ Matrix detectEdges(Matrix inputMatrix)
 	double gx, gy, mag;
 	Matrix edgeMatrix = createMatrix(inputMatrix.height, inputMatrix.width);
 
+	// Important fix: initialize the whole edge image to black.
+	for (m = 0; m < inputMatrix.height; m++)
+		for (n = 0; n < inputMatrix.width; n++)
+			edgeMatrix.map[m][n] = 0.0;
+
 	for (m = 1; m < inputMatrix.height - 1; m++)
 		for (n = 1; n < inputMatrix.width - 1; n++)
 		{
@@ -109,7 +127,7 @@ Matrix detectEdges(Matrix inputMatrix)
 }
 
 
-// builds a 3D Hough parameter space for circles.
+// Builds a 3D Hough parameter space for circles.
 // Dimensions are center row, center column, and radius index.
 HoughSpace houghTransformLines(Matrix mxSpatial, int minRadius, int maxRadius, int radiusStep)
 {
@@ -154,8 +172,7 @@ HoughSpace houghTransformLines(Matrix mxSpatial, int minRadius, int maxRadius, i
 }
 
 
-// Test whether entry (m, n) in matrix mx is a local maximum, i.e., is not exceeded by any
-// of its maximally 8 neighbors. Return 1 if true, 0 otherwise.
+// Test whether entry (m, n) in matrix mx is a local maximum.
 int isLocalMaximum(Matrix mx, int m, int n)
 {
 	double strength = mx.map[m][n];
@@ -205,10 +222,7 @@ void deleteMaxEntry(Matrix mx, int i)
 }
 
 
-// Find the <number> highest maxima in a 2D Hough projection that are separated by a
-// Euclidean distance of at least <minSeparation>. The result is a three-row matrix
-// with each column representing the row, the column, and the strength of one maximum,
-// in descending order of strength.
+// Find the highest maxima in a 2D Hough projection.
 Matrix findHoughMaxima(Matrix mx, int number, double minSeparation)
 {
 	int j, m, n, k;
@@ -257,8 +271,7 @@ Matrix findHoughMaxima(Matrix mx, int number, double minSeparation)
 
 
 // For a selected center (m, n), find a good radius.
-// This prefers the largest radius whose vote is at least 85% of the best vote,
-// which helps favor the outer boundary over smaller inner circular details.
+// This prefers the largest radius whose vote is at least 85% of the best vote.
 int bestRadiusAtCenter(HoughSpace hs, int m, int n, int minRadius, int radiusStep)
 {
 	int r, bestIndex = 0, chosenIndex = 0;
@@ -281,12 +294,13 @@ int bestRadiusAtCenter(HoughSpace hs, int m, int n, int minRadius, int radiusSte
 
 
 // Read image and write Hough transform related output images.
-
 int main(int argc, char *argv[])
 {
 	int i;
 	int radius;
+	int centerRow, centerCol;
 	double minStrength;
+
 	Image inputImage;
 	Matrix inputMatrix;
 	Matrix edgeMatrix, houghMatrix, maxMatrix;
@@ -302,15 +316,18 @@ int main(int argc, char *argv[])
 	inputImage = readImage(argv[1]);
 	inputMatrix = image2Matrix(inputImage);
 
+	printf("Detecting edges...\n");
 	edgeMatrix = detectEdges(inputMatrix);
 	edgeImage = matrix2Image(edgeMatrix, 1, 1.0);
-	// writeImage(edgeImage, argv[2]);
 
+	printf("Running Hough transform...\n");
 	houghSpace = houghTransformLines(edgeMatrix, MIN_RADIUS, MAX_RADIUS, RADIUS_STEP);
+
+	printf("Projecting Hough space...\n");
 	houghMatrix = projectHoughSpace(houghSpace);
 	houghImage = matrix2Image(houghMatrix, 1, 1.0);
-	// writeImage(houghImage, argv[3]);
 
+	printf("Finding maxima...\n");
 	maxMatrix = findHoughMaxima(houghMatrix, NUMBER_OF_CIRCLES, MIN_CENTER_SEPARATION);
 
 	for (i = 0; i < NUMBER_OF_CIRCLES; i++)
@@ -322,7 +339,9 @@ int main(int argc, char *argv[])
 				2, 10, 7,
 				255, 255, 255, 0);
 
-	minStrength = 0.3 * maxMatrix.map[2][0];
+	minStrength = MIN_STRENGTH_RATIO * maxMatrix.map[2][0];
+
+	printf("\nDetected circles:\n");
 
 	for (i = 0; i < NUMBER_OF_CIRCLES; i++)
 		if (maxMatrix.map[2][i] >= 0.0)
@@ -330,21 +349,27 @@ int main(int argc, char *argv[])
 			if (maxMatrix.map[2][i] < minStrength)
 				continue;
 
-			if (maxMatrix.map[0][i] < MAX_RADIUS || maxMatrix.map[0][i] >= inputImage.height - MAX_RADIUS ||
-				maxMatrix.map[1][i] < MAX_RADIUS || maxMatrix.map[1][i] >= inputImage.width - MAX_RADIUS)
+			centerRow = (int) maxMatrix.map[0][i];
+			centerCol = (int) maxMatrix.map[1][i];
+
+			if (centerRow < MAX_RADIUS || centerRow >= inputImage.height - MAX_RADIUS ||
+				centerCol < MAX_RADIUS || centerCol >= inputImage.width - MAX_RADIUS)
 				continue;
 
 			radius = bestRadiusAtCenter(houghSpace,
-				(int) maxMatrix.map[0][i],
-				(int) maxMatrix.map[1][i],
+				centerRow,
+				centerCol,
 				MIN_RADIUS, RADIUS_STEP);
 
-			if (radius < 24)
+			if (radius < MIN_RADIUS)
 				continue;
 
+			printf("Circle %d: center=(%d, %d), radius=%d, strength=%.2f\n",
+				i + 1, centerRow, centerCol, radius, maxMatrix.map[2][i]);
+
 			ellipse(inputImage,
-				(int) maxMatrix.map[0][i],
-				(int) maxMatrix.map[1][i],
+				centerRow,
+				centerCol,
 				radius, radius,
 				2, 18, 10,
 				255, 0, 0, 0);
