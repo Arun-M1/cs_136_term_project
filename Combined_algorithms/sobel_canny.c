@@ -5,7 +5,7 @@
 #include <time.h>
 #include "netpbm.h"
 
-#define SOBEL_THRESHOLD 100.0
+#define SOBEL_THRESHOLD 130.0
 #define CANNY_LOW_RATIO 0.10
 #define CANNY_HIGH_RATIO 0.22
 

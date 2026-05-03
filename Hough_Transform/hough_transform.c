@@ -16,7 +16,7 @@ EDGE_THRESHOLD 40
 This image has larger circular structures and lots of texture noise.
 */
 
-#define EDGE_THRESHOLD 90.0
+#define EDGE_THRESHOLD 100.0
 #define MIN_RADIUS 35
 #define MAX_RADIUS 160
 #define RADIUS_STEP 5
