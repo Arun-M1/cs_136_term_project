@@ -259,8 +259,8 @@ Image canny(Image img) {
     //double highThreshold = 0.15 * maxMag;
 
     //sensitive
-    double lowThreshold = 0.05 * maxMag;
-    double highThreshold = 0.10 * maxMag;
+    // double lowThreshold = 0.05 * maxMag;
+    // double highThreshold = 0.10 * maxMag;
 
     //strict
     double lowThreshold = 0.15 * maxMag;
