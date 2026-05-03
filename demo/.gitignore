@@ -1,1 +1,3 @@
 canny_edge
+gaussian_canny_combo
+output_bsds/
