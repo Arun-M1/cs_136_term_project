@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
 	HoughSpace houghSpace;
 	Image edgeImage, houghImage;
 
-	if (argc != 5)
+	if (argc != 3)
 	{
-		printf("Usage: %s input.pgm edge_output.pgm hough_output.pgm circles_output.ppm\n", argv[0]);
+		printf("Usage: %s input.pgm circles_output.ppm\n", argv[0]);
 		return 1;
 	}
 
@@ -304,12 +304,12 @@ int main(int argc, char *argv[])
 
 	edgeMatrix = detectEdges(inputMatrix);
 	edgeImage = matrix2Image(edgeMatrix, 1, 1.0);
-	writeImage(edgeImage, argv[2]);
+	// writeImage(edgeImage, argv[2]);
 
 	houghSpace = houghTransformLines(edgeMatrix, MIN_RADIUS, MAX_RADIUS, RADIUS_STEP);
 	houghMatrix = projectHoughSpace(houghSpace);
 	houghImage = matrix2Image(houghMatrix, 1, 1.0);
-	writeImage(houghImage, argv[3]);
+	// writeImage(houghImage, argv[3]);
 
 	maxMatrix = findHoughMaxima(houghMatrix, NUMBER_OF_CIRCLES, MIN_CENTER_SEPARATION);
 
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
 				255, 0, 0, 0);
 		}
 
-	writeImage(inputImage, argv[4]);
+	writeImage(inputImage, argv[2]);
 
 	deleteMatrix(inputMatrix);
 	deleteMatrix(edgeMatrix);

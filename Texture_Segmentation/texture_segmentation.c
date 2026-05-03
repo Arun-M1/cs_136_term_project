@@ -23,6 +23,7 @@ void kmeans(double **features, int count, int dim, int k, int *labels);
 Image labelsToColorImage(int *labels, int patchRows, int patchCols, int patchSize, int height, int width);
 void printLabelsGrid(int *labels, int patchRows, int patchCols);
 Image segmentTexture(Image inputImg, int segments);
+
 void buildLawsVectors(int laws[LAWS_COUNT][LAWS_SIZE]) {
     int L5[5] = {1, 4, 6, 4, 1};
     int E5[5] = {-1, -2, 0, 2, 1};
