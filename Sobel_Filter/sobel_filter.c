@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "netpbm.h"
+#include "../netpbm.h"
 
 Matrix convolve(Matrix m1, Matrix m2);
 Image sobel(Image img);

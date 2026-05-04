@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "netpbm.h"
+#include "../netpbm.h"
 
 #define LAWS_SIZE 5
 #define LAWS_COUNT 5
